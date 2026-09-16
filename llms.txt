@@ -1,0 +1,236 @@
+# Technical Static Document Generator
+
+> A documentation engine that compiles to exactly one standalone `dist/index.html`, runnable from
+> `file://` with zero network requests. Svelte 5 runes + MDsveX + Vite + Tailwind 4 + DaisyUI 5.
+> This file is the authoring contract for LLM agents working in this repository: how to add a
+> document, which components exist and what they take, how a diagram spec is written, and how to
+> verify your work. Read this instead of touring `src/`.
+
+The single rule everything else bends to: **no network at runtime.** No CDN, no web fonts, no runtime
+fetches, no hosted services. A change that needs one of those is the wrong change.
+
+## Commands
+
+```bash
+bun install
+bun run dev              # vite dev server
+bun run build            # → dist/index.html (single file, ~5.5 MB, gzip ~1.5 MB)
+bun run preview
+bun run check            # svelte-check — keep it at 0 errors, 0 warnings
+bun run check:diagrams   # lint every diagram spec in src/content (exit 1 on structural errors)
+```
+
+After editing content or components, run `check`, `check:diagrams` and `build`. There is no test
+suite; those three are the gate.
+
+## Add a document
+
+1. Create `src/content/NN-<id>.svx`. The stem after the numeric prefix is the document id:
+   `03-deployment.svx` → `deployment`.
+2. Add an entry to `src/config/sidebar.ts`, inside a `DocSection`:
+
+```ts
+{
+  id: 'deployment',
+  title: 'Deployment',
+  description: 'One line, shown in search and the header',
+  badge: 'v1.1',                      // optional
+  loader: () => import('../content/03-deployment.svx'),
+}
+```
+
+3. That is all. Search records, the on-this-page rail, prev/next and the sidebar are derived from
+   that file plus that entry. The build warns when a content file has no sidebar entry.
+
+Routes are `#/<docId>/<sectionSlug>`. Heading anchors come from `src/lib/slugify.ts`, which the
+build-time index and the browser decorator both run over the same text — that shared function is the
+only reason a search result's anchor matches the rendered heading. Keep it dependency-free.
+
+## Authoring a page
+
+`.svx` is markdown with components mixed in. The leading `#` heading is the document title. Data for
+components is authored inline in a `<script lang="ts">` block as plain literals — there are no JSON
+content files on purpose.
+
+```svx
+<script lang="ts">
+  import Callout from '$components/Callout.svelte';
+  import ArchitectureCanvas from '$components/ArchitectureCanvas.svelte';
+
+  const nodes = [
+    { id: 'api', title: 'Public API', subtitle: 'REST', type: 'backend' as const, x: 40, y: 50 },
+  ];
+</script>
+
+# Deployment
+
+<Callout type="warning" title="Air-gapped">No outbound calls at any point.</Callout>
+
+<ArchitectureCanvas title="Runtime topology" nodes={nodes} />
+```
+
+Aliases: `$components` → `src/lib/components`, `$lib`, `$config`, `$content`.
+
+Fenced code is highlighted at build time by Shiki with dual themes, so theme switching costs no
+re-highlight. Shiki never reaches the client bundle. These transformer markers work inside a fence:
+
+```ts
+const legacy = false;   // [!code --]
+const current = true;   // [!code ++]
+const important = 1;    // [!code highlight]
+```
+
+## Components
+
+Layout components (`LayoutShell`, `Router`, `SearchModal`, `TocRail`, `PageNav`, `ThemeSwitcher`,
+`DiagramFrame`) are wired into the shell. Content components, with their exact props:
+
+| Component | Props |
+|---|---|
+| `Callout` | `{ type?: 'info' \| 'warning' \| 'success' \| 'error' \| 'tip', title?, children }` |
+| `Tabs` | `{ items: { id, label, language?, snippet? }[], activeId? }` |
+| `ApiEndpoint` | `{ method, path, description?, requestBody?, curlExample?, responseExample? }` |
+| `JsonTree` | `{ data: unknown, title?, defaultExpandedDepth? }` |
+| `MermaidDiagram` | `{ code: string, title? }` |
+| `ArchitectureCanvas` | `{ title?, nodes, connections?, boundaries?, interactive? }` |
+| `AdrViewer` | `{ records: { id, status: 'accepted' \| 'proposed' \| 'deprecated' \| 'superseded', date, title, context, decision, consequences? }[] }` |
+
+`MermaidDiagram` renders with `securityLevel: 'strict'` and a token-derived theme. Add `accTitle:` and
+`accDescr:` lines inside the mermaid source to describe the diagram for screen readers; the hint text
+under the diagram tells the reader the same thing.
+
+## Diagram specs
+
+`ArchitectureCanvas` draws an authored topology. **Topology is authored, never solved** — there is no
+layout engine, and the same spec always produces the same diagram. Nodes are placed by hand as canvas
+percentages; everything else is derived from them.
+
+```ts
+const nodes = [
+  { id: 'client', title: 'Local Browser', subtitle: 'file://', type: 'client', x: 15, y: 26, variant: 'emphasis' },
+  { id: 'api', title: 'Public API', subtitle: 'REST', type: 'backend', x: 48, y: 26 },
+];
+const connections = [
+  { from: 'client', to: 'api', label: 'HTTPS', fromSide: 'right', toSide: 'left' },
+  { id: 'emit', from: 'build', to: 'client', label: 'Emits dist/index.html',
+    fromSide: 'bottom', toSide: 'top', variant: 'emphasis', width: 2, via: [[48, 60]], labelAt: [48, 42] },
+];
+const boundaries = [
+  { id: 'edge', kind: 'region', label: 'Edge', wraps: ['client'] },
+  { id: 'trust', kind: 'security-group', label: 'No network', wraps: ['api'], pad: 22 },
+];
+```
+
+### Node
+
+`{ id, title, type?, variant?, subtitle?, tags?, highlight?, x, y }`
+
+- `x` / `y` are percentages of the canvas and describe the node's **centre**.
+- `type` picks icon and tone, and defaults to `service`:
+  `client`, `gateway`, `service`, `database`, `security`, `cache`, `frontend`, `backend`, `cloud`,
+  `messagebus`, `external`.
+- `variant` is emphasis, independent of type: `default`, `emphasis`, `security`, `dashed`.
+  `highlight: true` is the legacy alias for `variant: 'emphasis'`.
+
+### Connection
+
+`{ id?, from, to, label?, variant?, dashed?, bidirectional?, color?, fromSide?, toSide?, route?, via?, labelAt?, labelDx?, labelDy?, labelSegment?, width? }`
+
+- **A side is a contract, not a hint**: `left | right | top | bottom`. The first and last segment run
+  perpendicular to the side they leave and enter.
+- `route`: `auto` (default) keeps the straight centre-to-centre line when no sides are authored, and
+  routes orthogonally when they are. Also `straight`, `orthogonal-h`, `orthogonal-v`.
+- `via` holds waypoints in canvas percentages and is how you steer a route around an obstacle.
+- Label placement: `labelAt` (percentages), `labelDx` / `labelDy` (px nudge), `labelSegment`
+  (zero-based segment of the route).
+- `width` is clamped to 0.5–6 px; the default is 1.5. `color` is an escape hatch — prefer `variant`,
+  which resolves through the theme.
+
+### Boundary
+
+`{ id, kind: 'region' | 'security-group', label, wraps: string[], pad? }`
+
+The box is derived from the members' measured sizes. Only `pad` is authored, and it applies to the
+sides and bottom: the top edge derives its own inset so the boundary's own label never collides with a
+relationship label lifted clear of the first row.
+
+### Invariants
+
+These are checked, not suggestions. One obvious main path, and a side branch leaves the nearest
+main-path node. Relationship labels are semantic data: reposition or shorten one, never delete it to
+clear a collision. Spacing means clear gap, not centre distance.
+
+`bun run check:diagrams` reports: duplicate or malformed ids, unknown endpoints, self-connections,
+duplicate connections, boundaries that wrap nothing or enclose a node they do not claim, isolated
+nodes, nodes closer than the 34 px clear gap the layout is tuned for, routes crossing an unrelated
+box, routes crossing a boundary label, labels masking a node, and labels that merely restate their
+endpoints. Structural problems are errors and fail the run; composition problems are warnings.
+
+Structure is exact in the script, but its geometry uses estimated box sizes. The browser measures the
+real ones and reports through `console.warn`, plus a badge and an overlay in the frame's toolbar. That
+runtime pass runs in development, or whenever the URL carries `?diagram-debug` — which is the way in
+when a dev server is started from a shell that exports `NODE_ENV=production`, where
+`import.meta.env.DEV` is false.
+
+### Export
+
+The frame's export menu downloads a standalone SVG, a PNG, or copies the SVG source. Both are rebuilt
+from the spec and the measured layout, not copied from the DOM, so an export never carries selection,
+focus rings, pan/zoom state or the diagnostics overlay. The SVG export can embed both themes behind a
+`prefers-color-scheme` query.
+
+## Theme and token rules
+
+`src/theme/tokens.css` is the only file to edit to change how the product looks. Components reference
+only the declared vocabulary: `bg-base-100/200/300`, `text-base-content`, `border-edge`,
+`border-edge-strong`, `rounded-chip` (3 px) / `rounded-edge` (4 px) / `rounded-panel` (6 px), and
+`text-micro/meta/body/title`.
+
+Banned inside `src/lib/**`: `rounded-2xl`, `rounded-3xl`, `border-base-content/N`, `text-[Npx]`,
+literal hex, `bg-slate-*`.
+
+```bash
+grep -rnE 'rounded-(2xl|3xl)|border-base-content/|text-\[1[0-9]px\]' src/lib
+```
+
+- Adding a preset is a `@plugin "daisyui/theme"` block in `tokens.css` plus a row in
+  `src/theme/presets.ts`. No component edits — if a component needs a change, the token layer is
+  wrong.
+- Dark mode keys off `data-color-scheme`, never the preset name, so renaming a preset cannot break a
+  stylesheet.
+- Renderers that cannot read a CSS variable (Mermaid, the SVG export) read resolved values through
+  `readToken()` from `src/lib/css-tokens.ts`, with per-preset hex in the `--diagram-*` group.
+
+## Accessibility
+
+Treat it as a requirement, not a polish pass: colour is never the only signal (pair it with an icon,
+a label or weight), interactive things are real `<button>` elements with accessible names, and there
+are no `svelte-ignore a11y_*` suppressions anywhere in the tree.
+
+## Gotchas
+
+- **The search index strips components and expressions.** `vite-plugins/docs-index.ts` removes
+  `<script>` blocks, component tags and `{…}` expressions before indexing, and keeps prose, headings
+  and fenced code. So diagram node labels, ADR text and component props are *not* searchable — if
+  something must be findable, say it in prose or a heading.
+- **`src/lib/slugify.ts` is a contract.** It runs on both sides of the build; changing it changes
+  every existing anchor.
+- **Do not hand-tune derived geometry.** Node coordinates and route anchors are yours; boundary
+  insets, label lanes, the fit and label lifting are the renderer's. If a diagram looks wrong, move a
+  node, author a side or a waypoint, or read a diagnostic — do not add a constant.
+- **`highlight` and `dashed` are legacy aliases.** Write `variant` in new specs.
+
+## Where things live
+
+```
+src/content/*.svx           documents
+src/config/sidebar.ts       navigation, doc metadata, loaders
+src/config/site.ts          product name, badge, tagline
+src/theme/tokens.css        the design tokens and the presets
+src/theme/presets.ts        preset registry
+src/lib/diagram/            diagram model, geometry, validator, palette, SVG export
+src/lib/components/         content components + DiagramFrame
+src/lib/layout/             shell, router, rails
+vite-plugins/docs-index.ts  build-time search index
+scripts/check-diagrams.ts   the diagram linter behind `bun run check:diagrams`
+```

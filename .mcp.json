@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "context7": {
+      "transport": "stdio",
+      "enabled": true,
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "daisyui-docs": {
+      "transport": "http",
+      "enabled": true,
+      "url": "https://gitmcp.io/saadeghi/daisyui"
+    }
+  }
+}

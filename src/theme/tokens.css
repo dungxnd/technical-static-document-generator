@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   daisyUI: components + utilities only. Themes are declared explicitly
+   below so the built CSS contains exactly two, and no dead theme blocks.
+   ───────────────────────────────────────────────────────────────────────── */
+@plugin "daisyui" {
+  themes: false;
+}
+
+@plugin "@tailwindcss/typography";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   THE CONFIG SURFACE
+   ---------------------------------------------------------------------------
+   Components may only reference these names. Adding a preset means adding one
+   `@plugin "daisyui/theme"` block below plus one row in presets.ts — never
+   editing a .svelte file.
+
+   Vocabulary:
+     surfaces   bg-base-100 / bg-base-200 / bg-base-300
+     text       text-base-content
+     edges      border-edge / border-edge-strong / bg-edge
+     radii      rounded-chip (3px) · rounded-edge (4px) · rounded-panel (6px)
+     type       text-micro (11px) · text-meta (12px) · text-body (15px) · text-title
+   Banned in src/lib/**:
+     rounded-2xl, rounded-3xl, border-base-content/N, text-[Npx], #hex, bg-slate-*
+   ───────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* radii — "technical instrument": tight, near-square, no pill shapes */
+  --radius-chip: 0.1875rem;
+  --radius-edge: 0.25rem;
+  --radius-panel: 0.375rem;
+
+  /* edges derived from the theme's own content colour, so one token works
+     in every preset instead of a hardcoded black/white alpha */
+  --color-edge: color-mix(in oklab, var(--color-base-content) 12%, transparent);
+  --color-edge-strong: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+
+  /* offline artifact: system stacks only, no webfont request */
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", "SFMono-Regular", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1.45;
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1.5;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.7;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.25;
+
+  /* density — every spacing decision derives from this one value */
+  --spacing: 0.25rem;
+}
+
+/* ── Preset: blueprint (light) ─────────────────────────────────────────── */
+@plugin "daisyui/theme" {
+  name: "blueprint";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  /* cool neutrals carrying a whisper of chroma so they read authored */
+  --color-base-100: oklch(99.3% 0.002 255);
+  --color-base-200: oklch(97.2% 0.004 255);
+  --color-base-300: oklch(93.5% 0.006 255);
+  --color-base-content: oklch(22% 0.014 255);
+
+  /* one restrained accent: burnt signal-amber, deliberately not tech blue */
+  --color-primary: oklch(48% 0.14 45);
+  --color-primary-content: oklch(99% 0.01 45);
+  --color-secondary: oklch(42% 0.035 255);
+  --color-secondary-content: oklch(98% 0.004 255);
+  --color-accent: oklch(48% 0.085 205);
+  --color-accent-content: oklch(99% 0.005 205);
+  --color-neutral: oklch(28% 0.012 255);
+  --color-neutral-content: oklch(97% 0.004 255);
+  --color-info: oklch(50% 0.11 245);
+  --color-info-content: oklch(99% 0.005 245);
+  --color-success: oklch(48% 0.11 152);
+  --color-success-content: oklch(99% 0.005 152);
+  --color-warning: oklch(62% 0.14 88);
+  --color-warning-content: oklch(20% 0.03 88);
+  --color-error: oklch(50% 0.19 25);
+  --color-error-content: oklch(99% 0.005 25);
+
+  --radius-selector: 0.1875rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.375rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+
+  /* Diagram palette for Mermaid, which resolves its theme colours through a
+     colour library that predates oklch. Hex is derived from the roles above,
+     so the diagrams still track the preset — they just need the older format. */
+  --diagram-surface: #fcfdfe;
+  --diagram-node: #f4f6f8;
+  --diagram-node-alt: #e7eaed;
+  --diagram-text: #161b21;
+  --diagram-border: #b9bec6;
+  --diagram-line: #838a92;
+  --diagram-accent: #9a3c00;
+}
+
+/* ── Preset: blueprint-dark ────────────────────────────────────────────── */
+@plugin "daisyui/theme" {
+  name: "blueprint-dark";
+  default: false;
+  prefersdark: false;
+  color-scheme: dark;
+
+  --color-base-100: oklch(17.5% 0.008 255);
+  --color-base-200: oklch(21.5% 0.009 255);
+  --color-base-300: oklch(26.5% 0.01 255);
+  --color-base-content: oklch(92% 0.006 255);
+
+  /* accent lifted for dark-surface contrast */
+  --color-primary: oklch(78% 0.13 60);
+  --color-primary-content: oklch(20% 0.04 60);
+  --color-secondary: oklch(75% 0.02 255);
+  --color-secondary-content: oklch(20% 0.01 255);
+  --color-accent: oklch(74% 0.09 200);
+  --color-accent-content: oklch(20% 0.03 200);
+  --color-neutral: oklch(32% 0.01 255);
+  --color-neutral-content: oklch(95% 0.005 255);
+  --color-info: oklch(74% 0.1 245);
+  --color-info-content: oklch(20% 0.03 245);
+  --color-success: oklch(74% 0.12 152);
+  --color-success-content: oklch(20% 0.03 152);
+  --color-warning: oklch(82% 0.13 88);
+  --color-warning-content: oklch(22% 0.04 88);
+  --color-error: oklch(72% 0.16 25);
+  --color-error-content: oklch(20% 0.04 25);
+
+  --radius-selector: 0.1875rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.375rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+
+  /* See the light preset for why diagrams use hex while the UI uses oklch. */
+  --diagram-surface: #0e1114;
+  --diagram-node: #171a1e;
+  --diagram-node-alt: #22262a;
+  --diagram-text: #e2e5e9;
+  --diagram-border: #31363c;
+  --diagram-line: #565b63;
+  --diagram-accent: #f4a25c;
+}
+
+/* Tailwind's `dark:` variant follows our own colour-scheme attribute rather
+   than the theme name, so renaming a preset never breaks a utility. */
+@custom-variant dark (&:where([data-color-scheme="dark"], [data-color-scheme="dark"] *));

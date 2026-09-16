@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" data-theme="blueprint" data-color-scheme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Technical Documentation Engine</title>
+    <meta
+      name="description"
+      content="Offline-first technical documentation engine. Compiles to a single standalone HTML file with no network dependencies."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fdfdfe" />
+    <!--
+      Pre-paint theme resolution. Runs before the first frame so the document
+      never flashes the wrong preset. Mirrors src/lib/theme.svelte.ts.
+      Allowed by the CSP below via default-src 'unsafe-inline'.
+    -->
+    <script>
+      (function () {
+        var root = document.documentElement;
+
+        var THEME_KEY = 'theme';
+        var KNOWN = { blueprint: 'light', 'blueprint-dark': 'dark' };
+        var stored = null;
+        try {
+          stored = localStorage.getItem(THEME_KEY);
+        } catch (e) {
+          /* storage unavailable — fall through to the OS preference */
+        }
+        if (!stored || !KNOWN[stored]) {
+          stored =
+            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'blueprint-dark'
+              : 'blueprint';
+        }
+        var scheme = KNOWN[stored];
+        root.setAttribute('data-theme', stored);
+        root.setAttribute('data-color-scheme', scheme);
+        root.style.colorScheme = scheme;
+
+        var width = null;
+        try {
+          width = localStorage.getItem('content-width');
+        } catch (e) {
+          /* ignore */
+        }
+        root.dataset.contentWidth = width === 'wide' ? 'wide' : 'readable';
+      })();
+    </script>
+    <!-- No external requests: everything ships inline in this file. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;"
+    />
+  </head>
+  <body class="bg-base-100 text-base-content min-h-screen antialiased">
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

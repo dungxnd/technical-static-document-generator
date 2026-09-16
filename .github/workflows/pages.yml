@@ -1,0 +1,77 @@
+# Build the documentation site and publish it to GitHub Pages.
+#
+# The build output is one self-contained `index.html` with no absolute paths and
+# no external requests, so it serves unchanged from a project subpath
+# (`https://<owner>.github.io/<repo>/`) — there is nothing to configure for it,
+# and nothing runs server-side.
+#
+# Pull requests run the checks and the build; only the default branch deploys.
+
+name: Docs site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one in flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+
+      # setup-bun caches the binary, not the install cache — mermaid, shiki and
+      # tailwind make that cache worth keeping.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Check
+        run: |
+          bun run check
+          bun run check:diagrams
+
+      - name: Build
+        run: bun run build
+
+      # `dist/` holds exactly the built index.html; llms.txt rides along so the
+      # authoring contract is fetchable from the site root.
+      - name: Assemble the site
+        run: |
+          mv dist public
+          cp llms.txt public/llms.txt
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

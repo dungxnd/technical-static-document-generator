@@ -1,0 +1,166 @@
+<script lang="ts">
+  import MermaidDiagram from '$components/MermaidDiagram.svelte';
+  import Callout from '$components/Callout.svelte';
+  import Tabs from '$components/Tabs.svelte';
+  import ArchitectureCanvas from '$components/ArchitectureCanvas.svelte';
+  import AdrViewer from '$components/AdrViewer.svelte';
+
+  const pipelineDiagram = `
+graph TD
+    A[Authoring .svx Markdown] --> B[MDsveX Preprocessor]
+    B --> C[Shiki Dual-Theming Highlighter]
+    C --> D[Vite + Svelte SPA Compiler]
+    D --> E[vite-plugin-singlefile]
+    E --> F[Standalone index.html]
+    F --> G((Offline file:// Execution))
+  `;
+
+  const canvasNodes = [
+    { id: 'authoring', title: 'Authored .svx', subtitle: 'MDsveX input', type: 'external' as const, x: 15, y: 26 },
+    { id: 'compiler', title: 'SingleFile Build', subtitle: 'Inlines all assets', type: 'backend' as const, x: 48, y: 26 },
+    { id: 'shiki', title: 'Shiki Dual Theme', subtitle: 'github-light / dark', type: 'cache' as const, x: 81, y: 26 },
+    { id: 'client', title: 'Local Browser', subtitle: 'file:// · zero I/O', type: 'client' as const, x: 15, y: 78, variant: 'emphasis' as const },
+    { id: 'router', title: 'Hash Router Shell', subtitle: 'location.hash', type: 'gateway' as const, x: 48, y: 78 },
+    { id: 'minisearch', title: 'MiniSearch Store', subtitle: 'Inverted index', type: 'database' as const, x: 81, y: 78 },
+  ];
+
+  const canvasBoundaries = [
+    { id: 'build', kind: 'region' as const, label: 'Build-time pipeline', wraps: ['authoring', 'compiler', 'shiki'] },
+    { id: 'sandbox', kind: 'security-group' as const, label: 'Offline sandbox — no network', wraps: ['client', 'router', 'minisearch'] },
+  ];
+
+  const canvasConns = [
+    { from: 'authoring', to: 'compiler', label: 'MDsveX compile', fromSide: 'right' as const, toSide: 'left' as const },
+    { from: 'compiler', to: 'shiki', label: 'Highlight fences', fromSide: 'right' as const, toSide: 'left' as const },
+    {
+      id: 'emit',
+      from: 'compiler',
+      to: 'client',
+      label: 'Emits dist/index.html',
+      fromSide: 'bottom' as const,
+      toSide: 'top' as const,
+      variant: 'emphasis' as const,
+      width: 2,
+      via: [[48, 60]] as [number, number][],
+      labelAt: [48, 42] as [number, number],
+    },
+    { from: 'client', to: 'router', label: 'Hash dispatch', fromSide: 'right' as const, toSide: 'left' as const },
+    { from: 'router', to: 'minisearch', label: 'Index query', fromSide: 'right' as const, toSide: 'left' as const, variant: 'dashed' as const },
+  ];
+
+  const decisionRecords = [
+    {
+      id: 'ADR-001',
+      title: 'Single Standalone HTML Bundle Architecture',
+      status: 'accepted' as const,
+      date: '2026-09-16',
+      context: 'Technical specifications and air-gapped systems require complete offline execution via the local file system without running a local web server.',
+      decision: 'Compile the entire Svelte SPA into a single file with vite-plugin-singlefile, inlining all JS, CSS, Lucide icons, and Shiki grammars.',
+      consequences: 'Zero broken assets under file:// protocol. Zero external HTTP requests.'
+    },
+    {
+      id: 'ADR-002',
+      title: 'Dual-Theming Syntax Highlighting via CSS Variables',
+      status: 'accepted' as const,
+      date: '2026-09-16',
+      context: 'Re-running syntax highlighters during runtime theme changes introduces noticeable latency and layout shifts.',
+      decision: 'Configure Shiki with dual themes (github-light & github-dark) rendered simultaneously into CSS custom properties toggled by DaisyUI attributes.',
+      consequences: 'Instantaneous theme switches with 0ms re-render overhead.'
+    }
+  ];
+
+  const quickstartSnippets = [
+    {
+      id: 'bun',
+      label: 'Bun',
+      language: 'bash',
+      snippet: 'bun install\nbun run build\n# Output generated at dist/index.html'
+    },
+    {
+      id: 'npm',
+      label: 'npm / npx',
+      language: 'bash',
+      snippet: 'npm install\nnpm run build\n# Output generated at dist/index.html'
+    },
+    {
+      id: 'pnpm',
+      label: 'pnpm',
+      language: 'bash',
+      snippet: 'pnpm install\npnpm run build\n# Output generated at dist/index.html'
+    }
+  ];
+</script>
+
+# System Architecture & Offline Compiler Pipeline
+
+Welcome to the **Technical Static Document Generator**. This system is specifically architected to provide an offline-first, zero-dependency, ultra-fast technical documentation experience that runs natively via the `file://` protocol.
+
+<Callout type="tip" title="Production Ready Offline Architecture">
+  This document is compiled as a self-contained single-page application. All icons, syntax highlighters, schemas, and diagrams render locally without making a single network call.
+</Callout>
+
+---
+
+## 1. Interactive Architectural Blueprint
+
+Inspect the topology of the offline document engine using the interactive architectural canvas below. Boxes are grouped by the boundary they live inside, routes leave and enter the sides they are authored with, and every label carries the action rather than a restatement of its endpoints.
+
+Click any node for its metadata, move between nodes with the arrow keys, and use the export menu in the title bar to take the diagram away as a dual-theme SVG or a PNG.
+
+<ArchitectureCanvas
+  title="DocEngine Blueprint & In-Memory Pipeline"
+  nodes={canvasNodes}
+  connections={canvasConns}
+  boundaries={canvasBoundaries}
+/>
+
+---
+
+## 2. High-Level Compiler Pipeline (Mermaid)
+
+The document engine uses a streamlined pipeline to transform MDsveX markdown, TypeScript, and interactive Svelte components into a single standalone HTML artifact.
+
+<MermaidDiagram
+  code={pipelineDiagram}
+  title="Static Document Generation Pipeline"
+/>
+
+---
+
+## 3. Quickstart & Build Instructions
+
+Select your preferred package manager to build the standalone bundle:
+
+<Tabs items={quickstartSnippets} />
+
+---
+
+## 4. Shiki Dual-Theming & Code Transformation
+
+Below is an example of code blocks with built-in Shiki transformer support for notation diffs (`[!code ++]`, `[!code --]`) and line highlights (`[!code highlight]`):
+
+```typescript
+// Compiler configuration demonstration
+export interface PipelineOptions {
+  inlineAssets: boolean;
+  dualTheme: 'github-light' | 'github-dark'; // [!code highlight]
+  targetProtocol: 'file://' | 'https://';
+}
+
+export function createOfflineBundle(opts: PipelineOptions) {
+  const legacyLoader = false; // [!code --]
+  const singleFileBundle = true; // [!code ++]
+  return {
+    ready: singleFileBundle,
+    target: opts.targetProtocol
+  };
+}
+```
+
+---
+
+## 5. Architectural Decision Records (ADR)
+
+Formal records documenting the key technical choices in this repository:
+
+<AdrViewer records={decisionRecords} />

@@ -1,0 +1,108 @@
+<script lang="ts">
+  import ApiEndpoint from '$components/ApiEndpoint.svelte';
+  import JsonTree from '$components/JsonTree.svelte';
+  import Callout from '$components/Callout.svelte';
+  import Tabs from '$components/Tabs.svelte';
+
+  const sampleSchema = {
+    $schema: "http://json-schema.org/draft-07/schema#",
+    title: "TechnicalDocumentSpec",
+    type: "object",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      title: { type: "string" },
+      version: { type: "string", pattern: "^\\d+\\.\\d+\\.\\d+$" },
+      metadata: {
+        type: "object",
+        properties: {
+          author: { type: "string" },
+          offlineReady: { type: "boolean" },
+          tags: {
+            type: "array",
+            items: { type: "string" }
+          }
+        },
+        required: ["author", "offlineReady"]
+      },
+      endpoints: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            method: { enum: ["GET", "POST", "PUT", "DELETE"] },
+            path: { type: "string" },
+            secured: { type: "boolean" }
+          }
+        }
+      }
+    },
+    required: ["id", "title", "version", "metadata"]
+  };
+</script>
+
+# API Reference & Data Models
+
+This section provides interactive documentation for system endpoints, schemas, and payload structures.
+
+<Callout type="info" title="Zero Latency Mocking">
+  The endpoints below run in-memory within the offline SPA. Use the copy button to capture cURL requests or explore response models interactively.
+</Callout>
+
+---
+
+## 1. Document Schema API
+
+Inspect the schema endpoint definition below. You can switch tabs to view the `cURL` invocation or the raw response model.
+
+<ApiEndpoint
+  method="GET"
+  path="/api/v1/schema"
+  description="Retrieves the full JSON schema definition for the technical document specification."
+  curlExample={`curl -X GET "https://api.docs.internal/v1/schema" \\\n  -H "Accept: application/json"`}
+  responseExample={`{\n  "status": "success",\n  "version": "1.0.0",\n  "schema_type": "draft-07"\n}`}
+/>
+
+---
+
+## 2. Interactive Schema & Payload Inspector
+
+Deeply inspect, expand, and collapse complex technical data structures using the interactive JSON tree component:
+
+<JsonTree
+  data={sampleSchema}
+  title="Technical Document Schema (Draft-07)"
+  defaultExpandedDepth={2}
+/>
+
+---
+
+## 3. Compiler Execution API
+
+Below is the specification for executing single-file compilation pipelines programmatically:
+
+<ApiEndpoint
+  method="POST"
+  path="/api/v1/compile"
+  description="Submits an SVX documentation AST to be compiled into a single-file HTML bundle."
+  requestBody={`{\n  "entrypoint": "src/content/index.svx",\n  "minify": true,\n  "dualTheme": true,\n  "offlineMode": true\n}`}
+  curlExample={`curl -X POST "https://api.docs.internal/v1/compile" \\\n  -H "Content-Type: application/json" \\\n  -d '{"entrypoint": "src/content/index.svx", "dualTheme": true}'`}
+  responseExample={`{\n  "bundle_size_kb": 412,\n  "status": "compiled",\n  "output": "dist/index.html",\n  "external_requests": 0\n}`}
+/>
+
+---
+
+## 4. Code Block Highlight Demonstration
+
+```python
+import json
+
+def validate_offline_spec(document_path: str) -> bool:
+    """Validates that a document bundle contains no external HTTP requests."""
+    with open(document_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    # Check for external script/stylesheet links
+    assert "http://" not in content
+    assert "https://" not in content
+    return True
+```

@@ -23,6 +23,7 @@
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.20.3",
     "daisyui": "^5.7.38",
     "mdsvex": "^0.12.8",
     "postcss": "^8.5.28",

@@ -165,9 +165,26 @@
   <aside
     class="site-sidebar"
     class:is-open={isSidebarOpen}
-    aria-label="Documentation"
+    aria-label="Documentation navigation"
     inert={!isDesktop && !isSidebarOpen}
   >
+    <div class="sidebar-mobile-header lg:hidden">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <siteConfig.icon size={15} />
+        </span>
+        <span class="brand-name">{siteConfig.name}</span>
+      </div>
+      <button
+        type="button"
+        class="sidebar-close-btn"
+        onclick={() => (isSidebarOpen = false)}
+        aria-label="Close navigation"
+      >
+        <X size={16} aria-hidden="true" />
+      </button>
+    </div>
+
     <div class="sidebar-inner">
       {#each sidebarConfig as section (section.title)}
         <div class="nav-section">
@@ -584,31 +601,70 @@
     border-top: 1px solid var(--color-edge);
   }
 
+  .sidebar-mobile-header {
+    display: none;
+  }
+
   .sidebar-scrim {
     position: fixed;
     inset: 0;
-    z-index: 30;
+    z-index: 45;
     background-color: color-mix(in oklab, var(--color-base-content) 42%, transparent);
-    backdrop-filter: blur(1px);
+    backdrop-filter: blur(2px);
   }
 
   /* Below lg the sidebar becomes a drawer. */
   @media (max-width: 1023px) {
     .site-sidebar {
       position: fixed;
-      inset-block: 0;
+      top: 0;
+      bottom: 0;
       inset-inline-start: 0;
-      z-index: 35;
-      width: 272px;
-      padding-inline: 1rem;
+      z-index: 50;
+      width: min(288px, 85vw);
+      display: flex;
+      flex-direction: column;
       background-color: var(--color-base-100);
       border-inline-end: 1px solid var(--color-edge);
-      overflow-y: auto;
+      box-shadow: 0 0 24px -4px color-mix(in oklab, var(--color-base-content) 20%, transparent);
       transform: translateX(-100%);
-      transition: transform 200ms ease-out;
+      transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .site-sidebar.is-open {
       transform: translateX(0);
+    }
+    .sidebar-mobile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--color-edge);
+      background-color: var(--color-base-200);
+    }
+    .sidebar-close-btn {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: var(--radius-chip);
+      border: 1px solid var(--color-edge);
+      background-color: var(--color-base-100);
+      color: var(--color-base-content);
+      cursor: pointer;
+    }
+    .sidebar-close-btn:hover {
+      background-color: var(--color-base-300);
+    }
+    .site-sidebar .sidebar-inner {
+      flex: 1;
+      overflow-y: auto;
+      padding-inline: 1rem;
+      padding-block: 1rem 2rem;
+    }
+    .nav-link {
+      padding: 0.5rem 0.65rem;
+      min-height: 40px;
     }
   }
 
@@ -616,6 +672,7 @@
   .site-main {
     grid-column: 1;
     min-width: 0;
+    width: 100%;
     padding-block: 1.5rem 3rem;
     /* Readable measure by default; the header toggle relaxes it to full width.
        Centring keeps the leftover space even on both sides of the column
@@ -629,7 +686,8 @@
     }
   }
   :global(html[data-content-width='wide']) .site-main {
-    max-width: none;
+    max-width: 100%;
+    margin-inline: 0;
   }
   .site-main:focus {
     outline: none;

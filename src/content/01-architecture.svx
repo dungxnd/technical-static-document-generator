@@ -157,6 +157,22 @@ export function createOfflineBundle(opts: PipelineOptions) {
 }
 ```
 
+### Interactive Editable Placeholders
+
+Any `<placeholder_name>` pattern inside code blocks is automatically detected and converted into an editable inline input. Readers can supply their own parameters (such as API keys, hostnames, or tenant names) and click the **Copy** button to copy the snippet with their customized values filled in.
+
+```bash
+# Set your deployment variables
+export CLUSTER_NAME=<cluster_name>
+export DEPLOYMENT_ENV=<environment>
+export API_ENDPOINT=https://<api_host>/v1
+
+# Authenticate agent
+curl -X POST "$API_ENDPOINT/auth" \
+  -H "Authorization: Bearer <auth_token>" \
+  -d '{"cluster": "'"$CLUSTER_NAME"'"}'
+```
+
 ---
 
 ## 5. Architectural Decision Records (ADR)

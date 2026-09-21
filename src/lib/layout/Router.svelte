@@ -5,6 +5,7 @@
   import { siteConfig } from '../../config/site';
   import { decorateCode } from '../actions/decorate-code';
   import { decorateHeadings, scrollToSection } from '../actions/decorate-headings';
+  import { decorateScrollable } from '../actions/decorate-scrollable';
   import { TriangleAlert } from '@lucide/svelte';
 
   interface Props {
@@ -60,9 +61,13 @@
     if (status !== 'ready' || !Loaded || !articleEl) return;
 
     const undecorateCode = decorateCode(articleEl);
+    const undecorateScroll = decorateScrollable(articleEl);
     outline = decorateHeadings(articleEl, doc.id);
 
-    return undecorateCode;
+    return () => {
+      undecorateCode();
+      undecorateScroll();
+    };
   });
 
   // Declared after the decoration effect so heading ids exist by the time we

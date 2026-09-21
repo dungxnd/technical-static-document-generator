@@ -45,6 +45,80 @@ body {
   background-clip: content-box;
 }
 
+/* ── Scroll regions ───────────────────────────────────────────────────────
+   A box that scrolls but does not say so reads as a cut-off panel. The
+   scroll-affordance module marks which inline edge still holds content;
+   these rules turn that mark into a fade at exactly that edge, so the fade
+   exists only while there is something to scroll to.
+
+   `#000` is the mask's alpha channel, not a colour: a mask carries no colour
+   of its own, so no theme token can stand in for it.
+   ───────────────────────────────────────────────────────────────────────── */
+
+[data-overflow-x='end'] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+}
+[data-overflow-x='start'] {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 2.5rem), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 2.5rem), transparent);
+}
+[data-overflow-x='both'] {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 2.5rem,
+    #000 calc(100% - 2.5rem),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 2.5rem,
+    #000 calc(100% - 2.5rem),
+    transparent
+  );
+}
+
+/* The fade belongs at the inline end, which is the other side in RTL. */
+html[dir='rtl'] [data-overflow-x='end'] {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 2.5rem), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 2.5rem), transparent);
+}
+html[dir='rtl'] [data-overflow-x='start'] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+}
+html[dir='rtl'] [data-overflow-x='both'] {
+  -webkit-mask-image: linear-gradient(
+    to left,
+    transparent,
+    #000 2.5rem,
+    #000 calc(100% - 2.5rem),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to left,
+    transparent,
+    #000 2.5rem,
+    #000 calc(100% - 2.5rem),
+    transparent
+  );
+}
+
+/* The off-canvas drawer owns the page while it is open: nothing behind it may
+   scroll away under the reader. The gutter width is measured by the shell and
+   handed over as a variable, because a scrollbar that disappears would
+   otherwise drag the whole layout sideways as it goes. */
+html.is-scroll-locked,
+html.is-scroll-locked body {
+  overflow: hidden;
+}
+
+html.is-scroll-locked {
+  padding-right: var(--scroll-lock-gutter, 0px);
+}
+
 /* ── Prose: the typography plugin re-mapped onto theme tokens ─────────────
    Setting the --tw-prose-* palette makes prose follow the active preset, so
    no `prose-invert` variant is ever needed.
@@ -101,6 +175,20 @@ body {
 .prose :where(p, li):not(:where([class~="not-prose"] *)) {
   text-wrap: pretty;
 }
+/* A long path or URL in prose is the reader's content, not a layout decision:
+   break it rather than let it set the width of the column. `break-word` and
+   not `anywhere`, so the intrinsic width of the text is still reported. */
+.prose :where(p, li, dd, dt, a, td, th):not(:where([class~="not-prose"] *)) {
+  overflow-wrap: break-word;
+}
+/* Tables are the one block the measure cannot hold: a wide one has to scroll
+   inside its own frame instead of dragging the whole page sideways. */
+.prose :where(table):not(:where([class~="not-prose"] *)):not(.dt) {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
 .prose :where(code):not(:where(pre code, [class~="not-prose"] *)) {
   background-color: var(--color-base-200);
   border: 1px solid var(--color-edge);
@@ -142,6 +230,9 @@ body {
 .shiki {
   padding: 0.9rem 1.1rem;
   overflow-x: auto;
+  /* A horizontally scrolled snippet must not hand the gesture to the page —
+     on touch that reads as the whole document lurching sideways. */
+  overscroll-behavior-x: contain;
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   line-height: 1.65;
@@ -254,6 +345,42 @@ body {
   margin: 0;
 }
 
+/* Interactive placeholder input inside code blocks */
+.code-placeholder-input {
+  display: inline-block;
+  vertical-align: baseline;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: var(--color-primary, #3b82f6);
+  background-color: color-mix(in oklab, var(--color-primary, #3b82f6) 12%, transparent);
+  border: 1px dashed color-mix(in oklab, var(--color-primary, #3b82f6) 50%, transparent);
+  border-radius: var(--radius-chip, 3px);
+  padding: 0 0.25rem;
+  margin: 0 0.1rem;
+  box-sizing: content-box;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+/* Unedited state: value equals the raw tag token, styled to look like a placeholder */
+.code-placeholder-input[data-placeholder-empty] {
+  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+  font-style: italic;
+}
+
+.code-placeholder-input:hover {
+  background-color: color-mix(in oklab, var(--color-primary, #3b82f6) 20%, transparent);
+  border-color: var(--color-primary, #3b82f6);
+}
+
+.code-placeholder-input:focus {
+  background-color: var(--color-base-100);
+  border: 1px solid var(--color-primary, #3b82f6);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary, #3b82f6) 25%, transparent);
+  color: var(--color-base-content);
+}
+
 /* Token colours for snippets tokenized at runtime (see highlight-json.ts). */
 .tok-key {
   color: var(--color-base-content);
@@ -311,6 +438,11 @@ body {
   .shiki {
     break-inside: avoid;
     background: #f7f7f7 !important;
+  }
+  /* Paper has no scroll, so the fade would only cut the content off. */
+  [data-overflow-x] {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
   }
   [data-color-scheme] .shiki,
   [data-color-scheme] .shiki span {

@@ -3,6 +3,8 @@
   import JsonTree from '$components/JsonTree.svelte';
   import Callout from '$components/Callout.svelte';
   import Tabs from '$components/Tabs.svelte';
+  import DataTable from '$components/DataTable.svelte';
+  import type { Column } from '$components/DataTable.svelte';
 
   const sampleSchema = {
     $schema: "http://json-schema.org/draft-07/schema#",
@@ -38,6 +40,104 @@
     },
     required: ["id", "title", "version", "metadata"]
   };
+
+  // ── DataTable example data ────────────────────────────────────────────────
+
+  interface Endpoint {
+    method: string;
+    path: string;
+    auth: string;
+    latency: number;
+    status: string;
+  }
+
+  // Explicit column widths keep compact badges & numeric values snug, while the
+  // path column expands naturally across the remaining container width.
+  const endpointColumns: Column<Endpoint>[] = [
+    {
+      key: 'method',
+      label: 'Method',
+      align: 'center',
+      badge: (v) => {
+        if (v === 'GET') return 'info';
+        if (v === 'POST') return 'success';
+        if (v === 'PUT') return 'warning';
+        if (v === 'DELETE') return 'error';
+        return 'default';
+      },
+    },
+    { key: 'path', label: 'Path' },
+    { key: 'auth', label: 'Auth' },
+    {
+      key: 'latency',
+      label: 'Latency (ms)',
+      align: 'end',
+      sortable: true,
+      numeric: true,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      align: 'center',
+      badge: (v) => {
+        if (v === 'stable') return 'success';
+        if (v === 'beta') return 'warning';
+        if (v === 'deprecated') return 'error';
+        return 'default';
+      },
+    },
+  ];
+
+  const endpointRows: Endpoint[] = [
+    { method: 'GET',    path: '/api/v1/schema',        auth: 'API Key',  latency: 12,  status: 'stable' },
+    { method: 'POST',   path: '/api/v1/compile',       auth: 'Bearer',   latency: 340, status: 'stable' },
+    { method: 'GET',    path: '/api/v1/health',        auth: 'None',     latency: 4,   status: 'stable' },
+    { method: 'PUT',    path: '/api/v1/config',        auth: 'Bearer',   latency: 58,  status: 'beta' },
+    { method: 'DELETE', path: '/api/v1/cache',         auth: 'API Key',  latency: 21,  status: 'stable' },
+    { method: 'POST',   path: '/api/v1/search/index',  auth: 'Bearer',   latency: 210, status: 'beta' },
+    { method: 'GET',    path: '/api/v1/bundle/info',   auth: 'None',     latency: 7,   status: 'deprecated' },
+  ];
+
+  interface BuildRow {
+    version: string;
+    date: string;
+    bundleKb: number;
+    externalReqs: number;
+    result: string;
+  }
+
+  /** '1.10.0' sorts before '1.9.0' as a string, which is the wrong answer. */
+  function compareVersions(a: BuildRow, b: BuildRow): number {
+    const left = a.version.split('.').map(Number);
+    const right = b.version.split('.').map(Number);
+    for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+      const difference = (left[index] ?? 0) - (right[index] ?? 0);
+      if (difference !== 0) return difference;
+    }
+    return 0;
+  }
+
+  const buildColumns: Column<BuildRow>[] = [
+    { key: 'version',      label: 'Version',       sortable: true, sortFn: compareVersions },
+    { key: 'date',         label: 'Date',          sortable: true, align: 'start' },
+    { key: 'bundleKb',     label: 'Bundle (KB)',   align: 'end', sortable: true, numeric: true },
+    { key: 'externalReqs', label: 'Ext. Requests', align: 'end', numeric: true,
+      cell: (v) => v === 0 ? '✓ 0' : String(v) },
+    {
+      key: 'result',
+      label: 'Result',
+      align: 'center',
+      badge: (v) => v === 'pass' ? 'success' : 'error',
+    },
+  ];
+
+  const buildRows: BuildRow[] = [
+    { version: '1.3.0', date: '2026-09-16', bundleKb: 412, externalReqs: 0, result: 'pass' },
+    { version: '1.2.5', date: '2026-09-10', bundleKb: 408, externalReqs: 0, result: 'pass' },
+    { version: '1.2.4', date: '2026-09-04', bundleKb: 402, externalReqs: 0, result: 'pass' },
+    { version: '1.2.3', date: '2026-08-28', bundleKb: 399, externalReqs: 2, result: 'fail' },
+    { version: '1.2.2', date: '2026-08-20', bundleKb: 395, externalReqs: 0, result: 'pass' },
+  ];
 </script>
 
 # API Reference & Data Models
@@ -106,3 +206,51 @@ def validate_offline_spec(document_path: str) -> bool:
     assert "https://" not in content
     return True
 ```
+
+### Dynamic Placeholder Configuration Example
+
+Edit the `<...>` fields below and click the **Copy** button in the header bar to copy the whole snippet with your input values applied:
+
+```bash
+# Bắt buộc
+SALES_KEY=<sales_key>
+DOWNLOAD_KEY=<download_key>
+AGENT_KEY=<agent_key>
+
+# Đặt 'ocp' cho Red Hat OpenShift
+CLUSTER_TYPE=ocp
+
+# Tên tenant/unit (dùng trong URL và tên resource)
+INSTANA_TENANT_NAME=tenant0
+INSTANA_UNIT_NAME=unit0
+```
+
+---
+
+## 5. Endpoint Inventory (DataTable)
+
+The table below lists every registered API endpoint. Click **Latency (ms)** to sort. Method and Status columns use semantic badge chips — no colour-only encoding.
+
+Columns divide whatever width the article is given instead of demanding their own, so this table fits the reading measure and only ever truncates a cell it cannot fit. Narrow the window, or switch the header to the readable measure, and the rows restack as labelled cards rather than scrolling sideways.
+
+<DataTable
+  columns={endpointColumns}
+  rows={endpointRows}
+  caption="API endpoint registry — sortable by latency"
+  rowKey={(row) => row.method + row.path}
+/>
+
+---
+
+## 6. Build History (compact + striped)
+
+A compact, striped variant for dense audit data. Click **Version**, **Date**, or **Bundle (KB)** to sort. Version sorts by number, so `1.10.0` follows `1.9.0` rather than preceding it as a string compare would have it:
+
+<DataTable
+  columns={buildColumns}
+  rows={buildRows}
+  caption="Nightly build audit — bundle size and offline-safety check"
+  rowKey={(row) => row.version}
+  compact
+  striped
+/>

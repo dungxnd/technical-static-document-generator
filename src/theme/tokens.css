@@ -49,7 +49,10 @@
   --text-meta--line-height: 1.5;
   --text-body: 0.9375rem;
   --text-body--line-height: 1.7;
-  --text-title: 1.375rem;
+  /* The one size that scales with the viewport: a title gains presence from
+     the extra room a wide screen has, and stops at 26px rather than shouting.
+     It bottoms out at its old fixed value, so a phone is unaffected. */
+  --text-title: clamp(1.375rem, 1.2rem + 0.6vw, 1.625rem);
   --text-title--line-height: 1.25;
 
   /* density — every spacing decision derives from this one value */

@@ -11,25 +11,25 @@
     "check:diagrams": "bun scripts/check-diagrams.ts"
   },
   "dependencies": {
-    "@lucide/svelte": "^1.46.0",
+    "@lucide/svelte": "^1.47.0",
     "@panzoom/panzoom": "^4.6.2",
     "@shikijs/transformers": "^4.4.3",
     "mermaid": "^12.0.0",
     "minisearch": "^7.2.0",
     "shiki": "^4.4.3",
-    "svelte": "^5.57.0"
+    "svelte": "^5.57.1"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/node": "^22.20.3",
-    "daisyui": "^5.7.38",
+    "@types/node": "^26.6.2",
+    "daisyui": "^5.7.42",
     "mdsvex": "^0.12.8",
     "postcss": "^8.5.28",
     "svelte-check": "^4.7.6",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5.8.2",
+    "typescript": "^7.0.2",
     "vite": "^8.3.0",
     "vite-plugin-singlefile": "^2.3.3"
   }

@@ -11,7 +11,7 @@ A high-performance, offline-first technical documentation engine built with **Sv
 1. **Standalone single-file artifact.** `vite-plugin-singlefile` inlines all JS, CSS, icons and WASM into `dist/index.html`. Open it directly from the filesystem.
 2. **One design-token layer.** Colours, radii, type scale and density live in `src/theme/tokens.css`. Re-skinning for a different brand is a config edit, never a component edit.
 3. **Build-time content index.** A Vite plugin reads `src/content/**/*.svx` and emits search records. A new document is searchable the moment the file lands.
-4. **Copy button on every code block.** A post-render pass decorates every `<pre>` with a language chip and copy button, with a `file://`-safe clipboard fallback.
+4. **Copy button and interactive placeholders on code blocks.** A post-render pass decorates every `<pre>` with a language chip and copy button, automatically turning single-line `<identifier>` tokens into editable inline inputs so users can fill values and copy the configured code directly.
 5. **Deep-linkable headings.** Hash grammar `#/<docId>/<sectionSlug>`, with a sticky on-this-page rail and scroll spy.
 6. **Dual-themed Shiki.** Both themes render simultaneously into CSS custom properties, so switching presets costs no re-highlight.
 7. **Authored architecture diagrams.** A hand-placed topology — boundaries, side-contracted routing, labelled relationships — checked by a linter and by a measured pass in the browser, and exportable as a dual-theme SVG or a PNG.

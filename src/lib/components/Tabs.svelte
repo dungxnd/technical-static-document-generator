@@ -69,22 +69,22 @@
   </div>
 
   {#each items as tab (tab.id)}
-    {#if selectedId === tab.id}
-      <div
-        role="tabpanel"
-        id="{uid}-panel-{tab.id}"
-        aria-labelledby="{uid}-tab-{tab.id}"
-        tabindex="0"
-        class="tab-panel"
-      >
-        {#if tab.snippet}
-          <!-- The code decorator adds the language chip and copy button. -->
-          <pre data-code-block={tab.language ?? ''} data-language={tab.language ?? 'text'}><code
-              >{tab.snippet}</code
-            ></pre>
-        {/if}
-      </div>
-    {/if}
+    {@const isSelected = selectedId === tab.id}
+    <div
+      role="tabpanel"
+      id="{uid}-panel-{tab.id}"
+      aria-labelledby="{uid}-tab-{tab.id}"
+      tabindex="0"
+      class="tab-panel"
+      hidden={!isSelected || undefined}
+    >
+      {#if tab.snippet}
+        <!-- The code decorator adds the language chip and copy button. -->
+        <pre data-code-block={tab.language ?? ''} data-language={tab.language ?? 'text'}><code
+            >{tab.snippet}</code
+          ></pre>
+      {/if}
+    </div>
   {/each}
 </div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { highlightJson, isJsonLike } from '../highlight-json';
+  import { scrollAffordance } from '../actions/scroll-affordance';
 
   type Method = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -106,7 +107,7 @@
     {/if}
   </header>
 
-  <div class="ep-bar">
+  <div class="ep-bar" use:scrollAffordance>
     <div class="ep-tabs" role="tablist" bind:this={tablistEl} aria-label={`${method} ${path} examples`}>
       {#each panels as panel (panel.id)}
         {@const isSelected = active === panel.id}
@@ -138,7 +139,7 @@
         class="ep-panel"
       >
         <!-- data-language lets the code decorator supply the chip and copy button. -->
-        <pre data-code-block data-language={panel.language}><code
+        <pre data-code-block data-language={panel.language} use:scrollAffordance><code
             >{#if bodyHtml}{@html bodyHtml}{:else}{panel.body}{/if}</code
           ></pre>
       </div>
@@ -183,6 +184,11 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--color-base-content);
+    /* An endpoint is one token: it truncates rather than wrapping the bar. */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .ep-desc {

@@ -2,6 +2,7 @@
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import { Braces, Check, ChevronDown, ChevronRight, Copy, Search } from '@lucide/svelte';
   import { copyText } from '../clipboard';
+  import { scrollAffordance } from '../actions/scroll-affordance';
 
   interface Props {
     data: unknown;
@@ -303,6 +304,7 @@
     role="tree"
     aria-label={`${title}, ${expandableCount} expandable nodes`}
     bind:this={treeEl}
+    use:scrollAffordance
   >
     {#if visibleRows.length === 0}
       <p class="jt-empty">No key matches “{filter.trim()}”.</p>

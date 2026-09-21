@@ -14,7 +14,7 @@ fetches, no hosted services. A change that needs one of those is the wrong chang
 ```bash
 bun install
 bun run dev              # vite dev server
-bun run build            # → dist/index.html (single file, ~5.5 MB, gzip ~1.5 MB)
+bun run build            # → dist/index.html (single file, ~1.3 MB, gzip ~330 kB)
 bun run preview
 bun run check            # svelte-check — keep it at 0 errors, 0 warnings
 bun run check:diagrams   # lint every diagram spec in src/content (exit 1 on structural errors)
@@ -80,6 +80,16 @@ const current = true;   // [!code ++]
 const important = 1;    // [!code highlight]
 ```
 
+### Editable codeblock placeholders
+
+Code blocks automatically convert single-line `<identifier>` tokens (e.g. `<sales_key>`, `<tenant_id>`)
+into interactive inline inputs at runtime. Users can fill in custom values and click **Copy** to
+copy the entire code snippet with their values applied (or placeholder defaults if left blank).
+Empty `<>` and multi-line patterns are ignored.
+
+To disable placeholder decoration on a specific code snippet, add `data-placeholders="false"` or
+`data-no-placeholders` to the `<pre>` or its `.code-block` wrapper.
+
 ## Components
 
 Layout components (`LayoutShell`, `Router`, `SearchModal`, `TocRail`, `PageNav`, `ThemeSwitcher`,
@@ -91,9 +101,33 @@ Layout components (`LayoutShell`, `Router`, `SearchModal`, `TocRail`, `PageNav`,
 | `Tabs` | `{ items: { id, label, language?, snippet? }[], activeId? }` |
 | `ApiEndpoint` | `{ method, path, description?, requestBody?, curlExample?, responseExample? }` |
 | `JsonTree` | `{ data: unknown, title?, defaultExpandedDepth? }` |
+| `DataTable` | `{ columns, rows, rowKey?, caption?, empty?, sortKey?, sortDir?, density?, layout?, stickyFirst?, maxHeight?, stack?, wrap? }` |
 | `MermaidDiagram` | `{ code: string, title? }` |
 | `ArchitectureCanvas` | `{ title?, nodes, connections?, boundaries?, interactive? }` |
 | `AdrViewer` | `{ records: { id, status: 'accepted' \| 'proposed' \| 'deprecated' \| 'superseded', date, title, context, decision, consequences? }[] }` |
+
+A `DataTable` column is
+`{ key, label, align?, sortable?, width?, cell?, badge?, grow?, priority?, numeric?, sortFn? }`.
+Sizing has exactly one strategy per table, and both start from "the table fits its container":
+
+- **`grow`** — a weight per column. Any column declaring one puts the table in a fixed layout where
+  the weights are the only sizing input: each column gets a plain percentage, so the widths always
+  add up to the container and a value too long for its column truncates instead of widening the
+  table past the box it is in. A column without a weight takes one share; `width` and `priority`
+  belong to the auto layout and are ignored here. Weight a column by what it needs, not by what it
+  may take.
+- **`priority: 2 | 3`** — drops the column below 34rem / 28rem of **container** width. Ignored in a
+  fixed layout, where removing a cell would re-map every later column's width onto the wrong column.
+  Use it for genuinely secondary columns; a column the reader needs is better off shrinking.
+
+The table answers to its own box — the article measure, which the header's width toggle moves — and
+never the viewport. Below 28rem each row becomes a card with every cell named, and the header row
+survives as the sort bar so sorting stays reachable. `stickyFirst` and `maxHeight` are for tables
+that genuinely scroll: one that fits has nothing to pin and nothing to stick.
+
+Any scroll region — markdown tables and Shiki blocks included — gets an edge fade and keyboard
+access from `src/lib/scroll-affordance.ts`. Components attach it with `use:scrollAffordance`; the
+document decorator covers the markup no component owns.
 
 `MermaidDiagram` renders with `securityLevel: 'strict'` and a token-derived theme. Add `accTitle:` and
 `accDescr:` lines inside the mermaid source to describe the diagram for screen readers; the hint text
@@ -219,6 +253,9 @@ are no `svelte-ignore a11y_*` suppressions anywhere in the tree.
   insets, label lanes, the fit and label lifting are the renderer's. If a diagram looks wrong, move a
   node, author a side or a waypoint, or read a diagnostic — do not add a constant.
 - **`highlight` and `dashed` are legacy aliases.** Write `variant` in new specs.
+- **No math functions in a `<col>` width.** A `calc()` or `max()` there is resolved once and then
+  frozen at that pixel value, so the column stops answering to its container. `DataTable` emits plain
+  percentages for exactly that reason.
 
 ## Where things live
 

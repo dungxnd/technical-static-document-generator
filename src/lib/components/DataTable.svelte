@@ -766,7 +766,7 @@
     }
   }
 
-  @container dt (max-width: 28rem) {
+  @container dt (max-width: 38rem) {
     /* Nothing scrolls here any more, so neither the fade nor the pinned
        column has anything left to say. */
     .dt-stackable .dt-scroll {
@@ -779,6 +779,10 @@
       display: flex;
       flex-direction: column;
       white-space: normal;
+    }
+
+    .dt-stackable colgroup {
+      display: none;
     }
 
     /* The caption belongs under the body, and only an ordered box can say so
@@ -795,8 +799,9 @@
     .dt-stackable .dt thead tr {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.25rem;
-      padding-block: 0.35rem;
+      gap: 0.35rem;
+      padding-block: 0.5rem;
+      padding-inline: 0.5rem;
     }
 
     /* The header row survives as the sort bar: dropping it would leave the
@@ -808,14 +813,16 @@
 
     .dt-stackable .dt-th {
       position: static;
+      display: inline-flex;
     }
 
     .dt-stackable .dt-sort-btn {
-      min-height: 2.25rem;
-      padding-inline: 0.6rem;
+      min-height: 2rem;
+      padding-inline: 0.65rem;
       border: 1px solid var(--color-edge);
       border-radius: var(--radius-chip);
-      background-color: var(--color-base-100);
+      background-color: var(--color-base-200);
+      font-size: var(--text-micro);
     }
 
     .dt-stackable .dt-sticky-first .dt-th:first-child,
@@ -827,27 +834,30 @@
     .dt-stackable .dt tbody {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
-      padding-block: 0.35rem;
+      gap: 0.6rem;
+      padding: 0.5rem;
     }
 
     .dt-stackable .dt tr.dt-row {
       display: flex;
       flex-direction: column;
       border: 1px solid var(--color-edge);
-      border-radius: var(--radius-edge);
+      border-radius: var(--radius-panel, 6px);
       overflow: hidden;
       background-color: var(--color-base-100);
+      box-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 4%, transparent);
     }
 
     .dt-stackable .dt td.dt-td {
-      display: grid;
-      grid-template-columns: minmax(5.5rem, 34%) minmax(0, 1fr);
-      align-items: baseline;
-      gap: 0.6rem;
-      padding: 0.4rem 0.7rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
       /* The column's own alignment belonged to the grid it is no longer in. */
-      text-align: start;
+      text-align: end;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .dt-stackable .dt td.dt-td:first-child {
@@ -855,16 +865,24 @@
     }
 
     .dt-stackable .dt td.dt-td + td.dt-td {
-      border-top: 1px dashed var(--color-edge);
+      border-top: 1px solid color-mix(in oklab, var(--color-edge) 60%, transparent);
     }
 
     .dt-stackable .dt-cell-label {
       display: block;
+      flex-shrink: 0;
       font-family: var(--font-mono);
       font-size: var(--text-micro);
       text-transform: uppercase;
       letter-spacing: 0.07em;
       color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+      text-align: start;
+    }
+
+    .dt-stackable .dt-cell {
+      min-width: 0;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .dt-stackable .dt-empty-cell {

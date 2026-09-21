@@ -164,7 +164,9 @@
           </span>
         {/if}
         <span class="brand-name">{siteConfig.name}</span>
-        <span class="brand-badge">{siteConfig.badge}</span>
+        {#if siteConfig.badge}
+          <span class="brand-badge">{siteConfig.badge}</span>
+        {/if}
       </a>
     </div>
 

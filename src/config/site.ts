@@ -5,8 +5,8 @@ import { Cpu } from '@lucide/svelte';
 export interface SiteConfig {
   /** Product name shown in the header and the document title suffix. */
   name: string;
-  /** Shown next to the name. Keep it short; it is hidden below `sm`. */
-  badge: string;
+  /** Shown next to the name. Keep it short; it is hidden below `sm`. Omit to hide the badge entirely. */
+  badge?: string;
   /** Words in the command palette and the footer. */
   tagline: string;
   /**

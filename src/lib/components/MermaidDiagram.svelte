@@ -1,3 +1,7 @@
+<script lang="ts" module>
+  let renderCount = 0;
+</script>
+
 <script lang="ts">
   import mermaid from 'mermaid';
   import Panzoom, { type PanzoomObject } from '@panzoom/panzoom';
@@ -36,8 +40,6 @@
 
   const MIN_SCALE = 0.4;
   const MAX_SCALE = 5;
-  let renderCount = 0;
-
   const activeScale = $derived(isFullscreen ? fullscreenScale : inlineScale);
   const canZoomIn = $derived(activeScale < MAX_SCALE - 0.01);
   const canZoomOut = $derived(activeScale > MIN_SCALE + 0.01);
